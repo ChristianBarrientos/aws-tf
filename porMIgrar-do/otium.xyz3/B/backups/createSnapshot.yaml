@@ -1,0 +1,8 @@
+apiVersion: snapshot.storage.k8s.io/v1alpha1
+kind: VolumeSnapshot
+metadata:
+  name: otium-wp-mysql-pvc-test-snapshot
+spec:
+  source:
+    name: otium-wp-mysql-pvc #Nombre del PVC creado. ejemplo: 
+    kind: PersistentVolumeClaim

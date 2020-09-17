@@ -1,0 +1,72 @@
+#resource "digitalocean_loadbalancer" "ot-lb" {
+  #name   = "ot-lb"
+  #region = "nyc3"
+
+  #forwarding_rule {
+  #  entry_port     = 80
+  #  entry_protocol = "http"
+
+  #  target_port     = 8080
+  #  target_protocol = "http"
+ # }
+  #forwarding_rule {
+ #   entry_port     = 443
+ #   entry_protocol = "https"
+
+ #   target_port     = 4443
+ #   target_protocol = "https"
+ # }
+
+  #healthcheck {
+  #  port     = 22
+  #  protocol = "tcp"
+  #}
+
+  #droplet_ids = [digitalocean_droplet.web.id]
+  #  name       = "ot-ssl-nodes"
+  #droplet_tag = "ot-ssl-nodes"
+#}
+
+resource "digitalocean_domain" "otium" {
+  name = "otium.xyz"
+}
+
+# Add a record to the domain
+resource "digitalocean_record" "www" {
+  domain = "${digitalocean_domain.otium.name}"
+  type   = "A"
+  name   = "www"
+  ttl    = "60"
+  value  = "165.227.249.31"
+}
+
+# Add a record to the domain
+resource "digitalocean_record" "mail" {
+  domain = "${digitalocean_domain.otium.name}"
+  type   = "A"
+  name   = "mail-testing"
+  ttl    = "30"
+  value  = "165.227.249.31"
+}
+
+# Add mx record to the domain (so it can receive emails)
+resource "digitalocean_record" "mx" {
+  domain = "${digitalocean_domain.otium.name}"
+  type   = "MX"
+  name   = "@"
+  priority  = "10"
+  ttl    = "14400"
+  value  = "mail-testing.${digitalocean_domain.otium.name}."
+}
+
+
+###########333
+#resource "aws_route53_record" "example" {
+#  zone_id = "${data.aws_route53_zone.k8.zone_id}"
+#  name    = "example"
+#  type    = "CNAME"
+#  ttl     = "300"
+#  records = ["${data.kubernetes_service.example.load_balancer_ingress.0.hostname}"]
+#}
+
+#digitalocean_kubernetes_cluster.ot-lb.ip

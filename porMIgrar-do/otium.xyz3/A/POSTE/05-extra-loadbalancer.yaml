@@ -1,0 +1,22 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: tcp-loadbalancer
+spec:
+  type: LoadBalancer
+  selector: #Manda el trafico a los pods que posean este etiqueta
+    app: traefik
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80 #Lo que llega al 80, lo manda al 8000
+      targetPort: 8000
+    - name: https
+      protocol: TCP
+      port: 443 #Lo que llega al 443, lo manda al 4443
+      targetPort: 4443
+
+
+##Comentario para configuraciond e Zona DNS
+##Se debe crear PRIMERO un registro A con www.dominio.bla -->LB
+##DESPUES se crea un registro A con dominio.bla -->LB  ------ NO SE NECESITA UN REGISTRO A CON @ -> LB

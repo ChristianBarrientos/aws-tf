@@ -1,0 +1,49 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: tcp-loadbalancer
+spec:
+  type: LoadBalancer
+  selector: #Manda el trafico a los pods que posean este etiqueta
+    app: traefik #QUe seria el ingress
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80 
+      targetPort: 8000
+    - name: https
+      protocol: TCP
+      port: 443 
+      targetPort: 4443
+    - name: smtp
+      protocol: TCP
+      port: 25 
+      targetPort: 30025
+    - name: pop3
+      protocol: TCP
+      port: 110 
+      targetPort: 30110
+    - name: imap
+      protocol: TCP
+      port: 143 
+      targetPort: 30143
+    - name: smtp-ssl
+      protocol: TCP
+      port: 587 
+      targetPort: 30587
+    - name: imap-ssl
+      protocol: TCP
+      port: 993 
+      targetPort: 30993
+    - name: pop3-ssl
+      protocol: TCP
+      port: 996 
+      targetPort: 30996            
+    - name: sieve
+      protocol: TCP
+      port: 4190 
+      targetPort: 32190  
+      
+##Comentario para configuraciond e Zona DNS
+##Se debe crear PRIMERO un registro A con www.dominio.bla -->LB
+##DESPUES se crea un registro A con dominio.bla -->LB  ------ NO SE NECESITA UN REGISTRO A CON @ -> LB

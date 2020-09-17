@@ -1,0 +1,27 @@
+resource "digitalocean_loadbalancer" "tcp-loadbalancer" {
+  name = "loadbalancer-1"
+  region = "nyc3"
+
+  forwarding_rule {
+    entry_port = 80
+    entry_protocol = "http"
+
+    target_port = 8000
+    target_protocol = "http"
+  }
+  forwarding_rule {
+    entry_port = 443
+    entry_protocol = "https"
+
+    target_port = 4443
+    target_protocol = "https"
+  }
+  healthcheck {
+    port = 22
+    protocol = "tcp"
+  }
+
+  droplet_tag = [${digitalocean_kubernetes_cluster.ot-ssl.node_pool.nodes.name}]
+}
+
+${data.digitalocean_loadbalancer.tcp-loadbalancer.ip}

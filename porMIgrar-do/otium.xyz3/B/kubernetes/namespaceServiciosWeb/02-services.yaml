@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik
+#  namespace: webpages
+
+spec:
+  type: NodePort
+  ports:
+    - protocol: TCP
+      name: web
+      port: 8000  #Puerto expuesto , recibe desde el load balancer (creo desde el pod de traefik ) . Llega y lo manda al 8000 (targetPort) del nodo
+      targetPort: 8000
+      nodePort: 30080 #Puerto del contenedor
+    - protocol: TCP
+      name: admin
+      targetPort: 8080
+      port: 8080
+    - protocol: TCP
+      name: websecure
+      port: 4443  #Puerto expuesto , recibe desde el load balancer. Llega y lo manda al 4443 (targetPort) del nodo
+      targetPort: 4443
+      nodePort: 30443 #Puerto del contenedor
+  selector:
+    app: traefik #Le manda el trafico a los pods que tengan esta etiqueta
+
+---
+##Servicio demo. Aqui deberia ir la aplicacion
+##Servicio para el WOrdpress
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+#  namespace: webpages
+
+  labels:
+    app: wordpress #Buscara los replications controlers, que posean esta etiquita
+spec:
+  ports:
+    - protocol: TCP
+      name: web
+      port: 80 #Puerto que tendra el contenedor expuesto
+  selector:
+    app: wordpress
+    tier: frontend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-svc
+#  namespace: webpages
+  labels:
+    app: wordpress
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: wordpress
+    tier: mysql
+  clusterIP: None
+
+##OSTICKET
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: osticket
+  labels:
+    app: osticket #Buscara los replications controlers, que posean esta etiquita
+spec:
+  ports:
+    - protocol: TCP
+      name: web
+      port: 80 #Puerto que tendra el contenedor expuesto
+  selector:
+    app: osticket
+    tier: frontend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: osticket-mysql-svc
+  labels:
+    app: osticket
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: osticket
+    tier: mysql2
+  clusterIP: None

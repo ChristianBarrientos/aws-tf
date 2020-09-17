@@ -1,0 +1,136 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: capresca-poste-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: do-block-storage
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: posteio
+  labels:
+    app: posteio
+    role: mail
+    tier: backend
+spec:
+  selector:
+    app: posteio
+    role: mail
+    tier: backend
+  ports:
+  - name: smtp
+    port: 25
+    protocol: TCP
+  - name: pop3
+    port: 110
+    protocol: TCP
+  - name: imap
+    port: 143
+    protocol: TCP
+  - name: smtp-ssl
+    port: 587
+    protocol: TCP
+  - name: imap-ssl
+    port: 993
+    protocol: TCP
+  - name: pop3-ssl
+    port: 995
+    protocol: TCP
+  - name: sieve
+    port: 4190
+    protocol: TCP
+  - name: http
+    port: 80
+    protocol: TCP
+  - name: https
+    port: 443
+    protocol: TCP   
+
+# 25 smtp
+# 110 pop3
+# 143 imap
+# 587 smtp (tls with starttls)
+# 993 imaps (tls since connect)
+# 995 pop3s (tls since connect)
+# 4190 sieve
+# 80 HTTP
+# 443 https
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: posteio
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: posteio
+        role: mail
+        tier: backend
+    spec:
+      containers:
+      - name: posteio
+        image: analogic/poste.io
+        imagePullPolicy: Always
+        env:
+          - name  : HTTPS
+            value : ON
+        volumeMounts:
+          - name: poste-content-persistent-storage
+            mountPath: /root/mail-data
+            readOnly: true
+        ports:
+          - name: smtp
+            containerPort: 25
+          - name: pop3
+            containerPort: 110
+          - name: imap
+            containerPort: 143
+          - name: smtp-ssl
+            containerPort: 587
+          - name: imap-ssl
+            containerPort: 993
+          - name: pop3-ssl
+            containerPort: 996
+          - name: sieve
+            containerPort: 4190
+          - name: http
+            containerPort: 80
+          - name: https
+            containerPort: 443
+          # 25 smtp
+          # 110 pop3
+          # 143 imap
+          # 587 smtp (tls with starttls)
+          # 993 imaps (tls since connect)
+          # 995 pop3s (tls since connect)
+          # 4190 sieve
+          # 80 HTTP
+          # 443 https
+      volumes:
+        - name: poste-content-persistent-storage
+          persistentVolumeClaim:
+            claimName: capresca-poste-pvc
+#        - name: mailstate
+#          hostPath:
+#            path: /var/data/mailu/mailstate
+#        - name: overrides
+#          hostPath:
+#            path: /var/data/mailu/overrides
+#        - name: certs
+#          secret:
+#            items:
+#              - key: tls.crt
+#                path: cert.pem
+ #             - key: tls.key
+ #               path: key.pem
+ #           secretName: letsencrypt-certs-all

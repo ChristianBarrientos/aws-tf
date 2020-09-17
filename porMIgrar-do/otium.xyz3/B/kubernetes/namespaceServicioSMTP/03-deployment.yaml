@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailserver
+ # namespace: mailserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailserver
+  template:
+    metadata:
+      labels:
+        app: mailserver
+        role: mail
+        tier: backend
+    spec:
+      hostNetwork: true
+      containers:
+      - name: mailserver
+        image: analogic/poste.io
+        imagePullPolicy: Always
+        env:
+       # - name: HTTPS
+       #   value: OFF
+        #volumeMounts:
+        #  - name: mail-persistent-storage
+        #    mountPath: /root/mail-data #:/data
+            #readOnly: true
+        ports:
+          - name: smtp
+            containerPort: 25
+            protocol: TCP
+          - name: http
+            containerPort: 80
+            protocol: TCP
+          - name: https
+            containerPort: 443
+            protocol: TCP
+          - name: pop3
+            containerPort: 110
+            protocol: TCP
+          - name: imap
+            containerPort: 143
+            protocol: TCP
+          - name: smtp-ssl
+            containerPort: 465
+            protocol: TCP
+          - name: smtp-auth
+            containerPort: 587
+            protocol: TCP   
+          - name: imap-ssl
+            containerPort: 993
+            protocol: TCP 
+          - name: pop3-ssl
+            containerPort: 995
+            protocol: TCP 
+      #volumes:
+      #  - name: mail-persistent-storage
+      #    persistentVolumeClaim:
+      #      claimName: otium-mail-pvc

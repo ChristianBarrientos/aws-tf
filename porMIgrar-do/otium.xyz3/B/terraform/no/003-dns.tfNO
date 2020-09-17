@@ -1,0 +1,33 @@
+# Creamos un dominio nuevo
+
+resource "digitalocean_domain" "otium" {
+  name = "otium.xyz"
+}
+
+# Add a record to the domain
+resource "digitalocean_record" "www" {
+  domain = "${digitalocean_domain.otium.name}"
+  type   = "A"
+  name   = "www"
+  ttl    = "60"
+  value  = "174.138.116.9"
+}
+
+# Add a record to the domain
+resource "digitalocean_record" "mail" {
+  domain = "${digitalocean_domain.otium.name}"
+  type   = "A"
+  name   = "mail-testing"
+  ttl    = "30"
+  value  = "174.138.116.9"
+}
+
+# Add mx record to the domain (so it can receive emails)
+resource "digitalocean_record" "mx" {
+  domain = "${digitalocean_domain.otium.name}"
+  type   = "MX"
+  name   = "@"
+  priority  = "10"
+  ttl    = "14400"
+  value  = "mail-testing.${digitalocean_domain.otium.name}."
+}
