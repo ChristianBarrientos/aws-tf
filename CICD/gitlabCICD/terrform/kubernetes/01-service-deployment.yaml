@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: gitlab-managed-apps
+  name: appcicd
+  labels:
+    app: appcicd
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+      #nodePort: 30000
+  selector:
+    app: appcicd
+    tier: frontend
+  type: NodePort
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  namespace: gitlab-managed-apps
+  name: appcicd
+  labels:
+    app: appcicd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: appcicd
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: appcicd
+        tier: frontend
+    spec:
+      containers:
+      - image: cabarrientos/cicd:v1
+        name: appcicd
+        ports:
+            - name: web
+              containerPort: 80         

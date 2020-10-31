@@ -1,0 +1,38 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: mailserver
+#  namespace: mailserver
+  labels:
+    app: mailserver
+spec:
+  selector:
+    app: mailserver
+  ports:
+    - name: smtp
+      port: 25
+      targetPort: smtp
+    - name: http
+      port: 80
+      targetPort: http
+    - name: https
+      port: 443
+      targetPort: https
+    - name: pop3
+      port: 110
+      targetPort: pop3
+    - name: imap
+      port: 143
+      targetPort: imap
+    - name: smtp-secure
+      port: 465
+      targetPort: smtp-secure
+    - name: smtp-auth
+      port: 587
+      targetPort: smtp-auth
+    - name: imap-secure
+      port: 993
+      targetPort: imap-secure
+    - name: pop3-secure
+      port: 995
+      targetPort: pop3-secure

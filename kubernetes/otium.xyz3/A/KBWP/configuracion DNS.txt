@@ -1,0 +1,10 @@
+https://poste.io/doc/configuring-dns
+https://sendgrid.com/docs/ui/account-and-settings/how-to-set-up-domain-authentication/#using-automated-security
+
+
+k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv86w2aG6w/v0p/EH6jQh9RiRMvOKMHU8lRgf22LRT/3fhqhYWaOFiGZWcdBWRkb1PlV6n04h3XFDUEL+rkAAX2lV9K2dYELKaam4p4GANvo4CsXVOvc9/qc/6hO6W+A/hTKpBRLa1l3jYW58KjBPe4g1zOuTuGzKG0yqXmnL99mMJ0ScxyQXxO8aELMDJXmZ8sqPA1aY8ZZpMAPfJ9Idl6i2PehBV7IGQIrEeZYC76mxrwihk5J3V8SouVJLPNJxhroAphB+vraqxYcRt4bgvj8DLHCqyw/TYu2dAeBJP99WmQxMWbZ887SARG1Y5pUSoBj0nGkrRogoSiVIYcvtDQIDAQAB
+
+Se configuro, POR  CADA DOMINIO Y SUBDOMINIO:
+DNMAR y SPF
+CNAME (3) para validar dominio con sendgrid
+DKIM en TXT generado por poste.io

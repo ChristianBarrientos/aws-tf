@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: otium-wp-mysql-pvc-test-snapshot-restore
+spec:
+  dataSource:
+    name:  otium-wp-mysql-pvc-test-snapshot #Nombre de la snapshot. eje: otium-wp-mysql-pvc-test-snapshots
+    kind: VolumeSnapshot
+    apiGroup: snapshot.storage.k8s.io
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

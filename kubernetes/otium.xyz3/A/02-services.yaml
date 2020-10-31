@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik
+spec:
+  type: NodePort
+  ports:
+    - protocol: TCP
+      name: web
+      port: 8000  #Puerto expuesto , recibe desde el load balancer (creo desde el pod de traefik ) . Llega y lo manda al 8000 (targetPort) del nodo
+      targetPort: 8000
+      nodePort: 30080 #Puerto del contenedor
+    - protocol: TCP
+      name: admin
+      targetPort: 8080
+      port: 8080
+    - protocol: TCP
+      name: websecure
+      port: 4443  #Puerto expuesto , recibe desde el load balancer. Llega y lo manda al 4443 (targetPort) del nodo
+      targetPort: 4443
+      nodePort: 30443 #Puerto del contenedor
+    - protocol: TCP
+      name: smtp
+      port: 30025  
+      targetPort: 30025
+      nodePort: 30025
+    - protocol: TCP
+      name: pop3
+      port: 30110  
+      targetPort: 30110
+      nodePort: 30110
+    - protocol: TCP
+      name: imap
+      port: 30143  
+      targetPort: 30143
+      nodePort: 30143
+    - protocol: TCP
+      name: smtp-ssl
+      port: 30587  
+      targetPort: 30587
+      nodePort: 30587
+    - protocol: TCP
+      name: imap-ssl
+      port: 30993  
+      targetPort: 30993
+      nodePort: 30993
+    - protocol: TCP
+      name: pop3-ssl
+      port: 30996  
+      targetPort: 30996
+      nodePort: 30996
+    - protocol: TCP
+      name: sieve
+      port: 32190  
+      targetPort: 32190
+      nodePort: 32190
+  selector:
+    app: traefik #Le manda el trafico a los pods que tengan esta etiqueta
+
+---
+##Servicio demo. Aqui deberia ir la aplicacion
+##Servicio para el WOrdpress
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress #Buscara los replications controlers, que posean esta etiquita
+spec:
+  ports:
+    - protocol: TCP
+      name: web
+      port: 80 #Puerto que tendra el contenedor expuesto
+  selector:
+    app: wordpress
+    tier: frontend
+
+---
+##Servicio Posteio
+apiVersion: v1
+kind: Service
+metadata:
+  name: posteio
+  labels:
+    app: posteio
+    role: mail
+    tier: backend
+spec:
+  selector:
+    app: posteio
+    role: mail
+    tier: backend
+  ports:
+  - name: smtp
+    port: 25
+    protocol: TCP
+  - name: pop3
+    port: 110
+    protocol: TCP
+  - name: imap
+    port: 143
+    protocol: TCP
+  - name: smtp-ssl
+    port: 587
+    protocol: TCP
+  - name: imap-ssl
+    port: 993
+    protocol: TCP
+  - name: pop3-ssl
+    port: 995
+    protocol: TCP
+  - name: sieve
+    port: 4190
+    protocol: TCP
+  - name: http
+    port: 80
+    protocol: TCP
+  - name: https
+    port: 443
+    protocol: TCP   

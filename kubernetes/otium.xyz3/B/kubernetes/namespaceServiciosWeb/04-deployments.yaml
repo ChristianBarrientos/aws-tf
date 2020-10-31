@@ -1,0 +1,267 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  #namespace: webpages
+  name: traefik-ingress-controller
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  #namespace: webpages
+  name: traefik
+  labels:
+    app: traefik
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      serviceAccountName: traefik-ingress-controller
+      containers:
+        - name: traefik
+          image: traefik:v2.0
+          args:
+            - --api.insecure
+            - --accesslog
+            - --log
+            #Eliminar log.level=DEBUG  en PRODUCCION
+            #- --log.level=DEBUG
+            - --entrypoints.web.Address=:8000
+            - --entrypoints.websecure.Address=:4443
+            #- --entrypoints.sieve.Address=:34190
+            - --providers.kubernetescrd
+            - --certificatesresolvers.default.acme.tlschallenge
+            - --certificatesresolvers.default.acme.email=christianbarrientoss@hotmail.com
+            - --certificatesresolvers.default.acme.storage=acme.json
+            # Please note that this is the staging Let's Encrypt server.
+            # Once you get things working, you should remove that whole line altogether.
+            # Comentar cuando sea prodduccion
+            #- --certificatesresolvers.default.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+
+            # middleware redirect
+            #- --entrypoints.web.middlewares.https-only.redirectscheme.scheme=https
+                  
+            # global redirect to https
+            #- --entrypoints.web.routers.redirs.rule=hostregexp(`{host:.+}`)
+            #- --entrypoints.web.routers.redirs.entrypoints=web
+            #- --entrypoints.web.routers.redirs.middlewares=https-only
+
+          ports:
+            - name: web
+              containerPort: 8000
+            - name: websecure
+              containerPort: 4443
+            - name: admin
+              containerPort: 8080
+            
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: mysql
+  #namespace: webpages
+  labels:
+    app: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: mysql
+    spec:
+      containers:
+      - image: mysql:5.6
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: Otium.XYZ.2020DO
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: otium-wp-mysql-pvc
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wordpress-demo-php-config
+#  namespace: webpages
+data:
+  wordpress-custom.ini: |-
+    upload_max_filesize = 600M
+    post_max_size = 600M
+    memory_limit = 256M
+    max_execution_time = 300
+    max_input_time = 300
+  another-one.ini: |-
+    some_other_php_stuff = true
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  #namespace: webpages
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: frontend
+    spec:
+      containers:
+      - image: wordpress:4.8-apache
+        name: wordpress
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: mysql-svc
+        - name: WORDPRESS_DB_PASSWORD
+          value: Otium.XYZ.2020DO
+        - name: PHP_INI_SCAN_DIR
+          value: :/usr/local/etc/php/conf.custom
+        volumeMounts:
+        - name: wp-content-persistent-storage
+          mountPath: /var/www/html/wp-content
+        - name: wp-php-config
+          mountPath: /usr/local/etc/php/conf.custom
+        ports:
+            - name: web
+              containerPort: 80         
+      volumes:
+      - name: wp-content-persistent-storage
+        persistentVolumeClaim:
+          claimName: otium-wp-pvc
+      - name: wp-php-config
+        configMap:
+          name: wordpress-demo-php-config
+##OSTICKET
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: mysql2
+  #namespace: webpages
+  labels:
+    app: osticket
+spec:
+  selector:
+    matchLabels:
+      app: osticket
+      tier: mysql2
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: osticket
+        tier: mysql2
+    spec:
+      containers:
+      - image: mysql:5.6
+        name: mysql2
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: Otium.XYZ.2020DO
+        - name: MYSQL_USER
+          value: osticket
+        - name: MYSQL_PASSWORD
+          value: Otium.XYZ.2020DOOsTicket
+        - name: MYSQL_DATABASE
+          value: osticket
+        ports:
+        - containerPort: 3306
+          name: mysql2
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: otium-osticket-mysql-pvc
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: osticket
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: osticket
+  template:
+    metadata:
+      labels:
+        app: osticket
+        tier: frontend
+    spec:
+      containers:
+      - image: campbellsoftwaresolutions/osticket
+        name: osticket
+        env:
+        - name: MYSQL_HOST
+          value: osticket-mysql-svc
+        - name: MYSQL_PASSWORD
+          value: Otium.XYZ.2020DOOsTicket  
+        - name: SMTP_HOST
+          value: mail.otium.xyz
+        - name: SMTP_PORT
+          value: '587'
+        - name: SMTP_USER
+          value: tickets@otium.xyz
+        - name: SMTP_PASSWORD
+          value: Otium.2020
+        - name: INSTALL_EMAIL
+          value: tickets@otium.xyz
+        - name: INSTALL_URL
+          value: https://mail.otium.xyz
+        - name: INSTALL_SECRET
+          value: dqw91jj23!#%=%="234m1m12j"
+        volumeMounts:
+        #- name: os-content-persistent-storage  #Set path pvc osticket
+        #  mountPath: /data/upload/include
+        - mountPath: /data/upload/include/plugins
+          name: os-content-persistent-storage 
+          subPath: include-plugins
+        - mountPath: /data/upload/include/i18n
+          name: os-content-persistent-storage 
+          subPath: include-i18n
+        #- name: os-content-persistent-storage  #Set path pvc osticket
+        #  mountPath: /data/upload/include/i18n
+        #- name: os-content-persistent-storage  #Set path pvc osticket
+        #  mountPath: /var/log/nginx
+        ports:
+            - name: web
+              containerPort: 80         
+      volumes:
+      - name: os-content-persistent-storage
+        persistentVolumeClaim:
+          claimName: otium-osticket-pvc
+
+

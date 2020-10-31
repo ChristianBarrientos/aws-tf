@@ -1,0 +1,87 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: secured
+  #namespace: webpages
+spec:
+  chain:
+    middlewares:
+    - name: https-only
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: https-only
+  #namespace: webpages
+spec:
+  redirectScheme:
+    scheme: https
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: simpleingressroute
+  #namespace: webpages
+spec:
+  entryPoints:
+    - web
+  routes:
+  - match: Host(`mern.otium.xyz`)
+    middlewares:
+    - name: https-only
+    kind: Rule
+    services:
+    - name: app-front
+      port: 80
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ingressroutetls
+  #namespace: webpages
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`mern.otium.xyz`)
+    kind: Rule
+    services:
+    - name: app-front
+      port: 80
+  tls:
+    certResolver: default
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: simpleingressroute2
+  #namespace: webpages
+spec:
+  entryPoints:
+    - web
+  routes:
+  - match: Host(`api.otium.xyz`)
+    middlewares:
+    - name: https-only
+    kind: Rule
+    services:
+    - name: app-back
+      port: 80
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ingressroutetls2
+  #namespace: webpages
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`api.otium.xyz`)
+    kind: Rule
+    services:
+    - name: app-back
+      port: 80
+  tls:
+    certResolver: default

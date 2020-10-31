@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  #namespace: webpages
+  name: traefik-ingress-controller
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  #namespace: webpages
+  name: traefik
+  labels:
+    app: traefik
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      serviceAccountName: traefik-ingress-controller
+      containers:
+        - name: traefik
+          image: traefik:v2.0
+          args:
+            - --api.insecure
+            - --accesslog
+            - --log
+            #Eliminar log.level=DEBUG  en PRODUCCION
+            #- --log.level=DEBUG
+            - --entrypoints.web.Address=:8000
+            - --entrypoints.websecure.Address=:4443
+            #- --entrypoints.sieve.Address=:34190
+            - --providers.kubernetescrd
+            - --certificatesresolvers.default.acme.tlschallenge
+            - --certificatesresolvers.default.acme.email=christianbarrientoss@hotmail.com
+            - --certificatesresolvers.default.acme.storage=acme.json
+            # Please note that this is the staging Let's Encrypt server.
+            # Once you get things working, you should remove that whole line altogether.
+            # Comentar cuando sea prodduccion
+            #- --certificatesresolvers.default.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+
+            # middleware redirect
+            #- --entrypoints.web.middlewares.https-only.redirectscheme.scheme=https
+                  
+            # global redirect to https
+            #- --entrypoints.web.routers.redirs.rule=hostregexp(`{host:.+}`)
+            #- --entrypoints.web.routers.redirs.entrypoints=web
+            #- --entrypoints.web.routers.redirs.middlewares=https-only
+
+          ports:
+            - name: web
+              containerPort: 8000
+            - name: websecure
+              containerPort: 4443
+            - name: admin
+              containerPort: 8080
+            
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  #namespace: webpages
+  name: app-front
+  labels:
+    app: app-front
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-front
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: app-front
+        tier: frontend
+    spec:
+      containers:
+      - image: cabarrientos/mern:v2
+        name: app-front
+        ports:
+            - name: web
+              containerPort: 80         
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  #namespace: webpages
+  name: app-back
+  labels:
+    app: app-back
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-back
+      tier: backend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: app-back
+        tier: backend
+    spec:
+      containers:
+      - image: cabarrientos/nodejs:v1.1
+        name: app-back
+        ports:
+            - name: web
+              containerPort: 80        
+
+
+
+

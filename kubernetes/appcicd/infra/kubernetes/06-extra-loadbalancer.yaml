@@ -1,0 +1,18 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: tcp-loadbalancer-mern
+  #namespace: webpages
+spec:
+  type: LoadBalancer
+  selector: #Manda el trafico a los pods que posean este etiqueta
+    app: traefik #QUe seria el ingress
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80 
+      targetPort: 8000
+    - name: https
+      protocol: TCP
+      port: 443 
+      targetPort: 4443

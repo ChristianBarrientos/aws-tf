@@ -1,0 +1,42 @@
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  namespace: default
+  name: poste
+  labels:
+    app: poste
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: poste
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: poste
+    spec:
+      containers:
+      - image: analogic/poste.io
+        name: poste
+        env:
+        - name: HTTPS
+          value: ON
+        volumeMounts:
+        - name: mail-persistent-storage
+          mountPath: /root/mail-data
+        ports:
+            - "25:25"
+            - "80:80"
+            - "443:443"
+            - "110:110"
+            - "143:143"
+            - "587:587"
+            - "993:993"
+            - "995:995"
+            - "4190:4190"       
+      volumes:
+      - name: mail-persistent-storage
+        persistentVolumeClaim:
+          claimName: poste-pvc

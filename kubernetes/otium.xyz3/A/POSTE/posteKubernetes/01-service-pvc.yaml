@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: poste-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: do-block-storage
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: poste
+  labels:
+    app: poste #Buscara los replications controlers, que posean esta etiquita
+spec:
+  ports:
+    - "25:25"
+    - "110:110"
+    - "143:143"
+    - "587:587"
+    - "993:993"
+    - "995:995"
+    - "4190:4190"
+  selector:
+    app: poste

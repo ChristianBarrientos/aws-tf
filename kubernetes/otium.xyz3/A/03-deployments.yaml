@@ -1,0 +1,192 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: default
+  name: traefik-ingress-controller
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  namespace: default
+  name: traefik
+  labels:
+    app: traefik
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      serviceAccountName: traefik-ingress-controller
+      containers:
+        - name: traefik
+          image: traefik:v2.0
+          args:
+            - --api.insecure
+            - --accesslog
+            - --log
+            #Eliminar log.level=DEBUG  en PRODUCCION
+            #- --log.level=DEBUG
+            - --entrypoints.web.Address=:8000
+            - --entrypoints.websecure.Address=:4443
+            - --entrypoints.smtp.Address=:30025
+            - --entrypoints.pop3.Address=:30110
+            - --entrypoints.imap.Address=:30143
+            - --entrypoints.smtp-ssl.Address=:30587
+            - --entrypoints.imap-ssl.Address=:30993
+            - --entrypoints.pop3-ssl.Address=:30996
+            - --entrypoints.sieve.Address=:34190
+            - --providers.kubernetescrd
+            - --certificatesresolvers.default.acme.tlschallenge
+            - --certificatesresolvers.default.acme.email=christianbarrientoss@hotmail.com
+            - --certificatesresolvers.default.acme.storage=acme.json
+            # Please note that this is the staging Let's Encrypt server.
+            # Once you get things working, you should remove that whole line altogether.
+            # Comentar cuando sea prodduccion
+            - --certificatesresolvers.default.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+
+            # middleware redirect
+            #- --entrypoints.web.middlewares.https-only.redirectscheme.scheme=https
+                  
+            # global redirect to https
+            #- --entrypoints.web.routers.redirs.rule=hostregexp(`{host:.+}`)
+            #- --entrypoints.web.routers.redirs.entrypoints=web
+            #- --entrypoints.web.routers.redirs.middlewares=https-only
+
+          ports:
+            - name: web
+              containerPort: 8000
+            - name: websecure
+              containerPort: 4443
+            - name: admin
+              containerPort: 8080
+            - name: smtp
+              containerPort: 30025  
+            - name: pop3
+              containerPort: 30110  
+            - name: imap
+              containerPort: 30143  
+            - name: smtp-ssl
+              containerPort: 30587  
+            - name: imap-ssl
+              containerPort: 30993  
+            - name: pop3-ssl
+              containerPort: 30996  
+            - name: sieve
+              containerPort: 32190  
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wordpress-demo-php-config
+  namespace: default
+data:
+  wordpress-custom.ini: |-
+    upload_max_filesize = 600M
+    post_max_size = 600M
+    memory_limit = 256M
+    max_execution_time = 300
+    max_input_time = 300
+  another-one.ini: |-
+    some_other_php_stuff = true
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  namespace: default
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: frontend
+    spec:
+      containers:
+      - image: wordpress:4.8-apache
+        name: wordpress
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: mysql-svc
+        - name: WORDPRESS_DB_PASSWORD
+          value: Capresca.Gob.Ar2020DO
+        - name: PHP_INI_SCAN_DIR
+          value: :/usr/local/etc/php/conf.custom
+        volumeMounts:
+        - name: wp-content-persistent-storage
+          mountPath: /var/www/html/wp-content
+        - name: wp-php-config
+          mountPath: /usr/local/etc/php/conf.custom
+        ports:
+            - name: web
+              containerPort: 80         
+      volumes:
+      - name: wp-content-persistent-storage
+        persistentVolumeClaim:
+          claimName: otium-wp-pvc
+      - name: wp-php-config
+        configMap:
+          name: wordpress-demo-php-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: posteio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: posteio
+  template:
+    metadata:
+      labels:
+        app: posteio
+    spec:
+      containers:
+      - name: posteio
+        image: analogic/poste.io
+        imagePullPolicy: Always
+        env:
+        - name: HTTPS
+          value: 'ON'
+        volumeMounts:
+        - name: poste-content-persistent-storage
+          mountPath: /root/mail-data
+        ports:
+            - name: smtp
+              containerPort: 25
+            - name: pop3
+              containerPort: 110
+            - name: imap
+              containerPort: 143
+            - name: smtp-ssl
+              containerPort: 587
+            - name: imap-ssl
+              containerPort: 993
+            - name: pop3-ssl
+              containerPort: 996
+            - name: sieve
+              containerPort: 4190
+            - name: web
+              containerPort: 80
+            - name: websecure
+              containerPort: 443
+      volumes:
+      - name: poste-content-persistent-storage
+        persistentVolumeClaim:
+          claimName: otium-poste-pvc

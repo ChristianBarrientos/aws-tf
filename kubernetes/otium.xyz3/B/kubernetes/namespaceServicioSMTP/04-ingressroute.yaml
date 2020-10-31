@@ -1,0 +1,33 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mailingressroute1
+ # namespace: mailserver
+spec:
+  entryPoints:
+    - web
+  routes:
+  - match: Host(`mail.otium.xyz`)
+    middlewares:
+    - name: https-only
+    kind: Rule
+    services:
+    - name: mailserver
+      port: 80
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mailingressroute2
+#  namespace: mailserver
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`mail.otium.xyz`)
+    kind: Rule
+    services:
+    - name: mailserver
+      port: 80
+  tls:
+    certResolver: default

@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30000
+  selector:
+    app: wordpress
+    tier: frontend
+  type: NodePort
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wordpress-demo-php-config
+  namespace: default
+data:
+  wordpress-custom.ini: |-
+    upload_max_filesize = 350M
+    post_max_size = 350M
+    memory_limit = 256M
+    max_execution_time = 300
+    max_input_time = 300
+  another-one.ini: |-
+    some_other_php_stuff = true
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  namespace: default
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: frontend
+    spec:
+      containers:
+      - image: wordpress:4.8-apache
+        name: wordpress
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: mysql-svc
+        - name: WORDPRESS_DB_PASSWORD
+          value: password1234
+        - name: PHP_INI_SCAN_DIR
+          value: :/usr/local/etc/php/conf.custom
+        volumeMounts:
+        - name: wp-content-persistent-storage
+          mountPath: /var/www/html/wp-content
+        - name: wp-php-config
+          mountPath: /usr/local/etc/php/conf.custom
+        ports:
+            - name: web
+              containerPort: 80         
+      volumes:
+      - name: wp-content-persistent-storage
+        persistentVolumeClaim:
+          claimName: wordpress-pvc
+      - name: wp-php-config
+        configMap:
+          name: wordpress-demo-php-config
